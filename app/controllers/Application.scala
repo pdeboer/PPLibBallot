@@ -14,7 +14,7 @@ object Application extends Controller {
   }
 
   def logout = Action { request =>
-    Ok("You are now logged out").withNewSession
+    Ok(views.html.login()).withNewSession
   }
 
   def login = Action { request =>
