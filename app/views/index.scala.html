@@ -1,7 +1,9 @@
-@(message: String)
+@(turkerId: String)
 
-@main("Welcome to Play") {
-
-    @play20.welcome(message)
-
+@main("Welcome to PPLibBallot") {
+    <h1>Welcome to PPLibBallot</h1>
+    <h3>Your username is: @turkerId</h3>
+    <form action="/logout" method="post">
+        <input type="submit" value="Logout">
+    </form>
 }
