@@ -1,0 +1,29 @@
+@(turkerId: String, question: String, possibleAnswers: String)
+
+@main("PPLibBallot - Question") {
+
+    <h1>
+        Hi @turkerId
+    </h1>
+
+    <div id="instruction">
+        Thank you for participating in our survey.<br>
+            Our goal is to see whether you are able to grasp some of the main concepts
+            in the field of statistics without needing to be an expert in that field -
+            just by basic text understanding. For that matter, we have prepared multiple such surveys;
+            in all of which you can participate at most once.
+    </div>
+
+    <hr style="width:100%;">
+
+    <div id="question">
+        @Html(question)
+    </div>
+
+    <hr style="width:100%;">
+
+    <div id="possibleAnswers">
+        @Html(possibleAnswers)
+    </div>
+
+}
