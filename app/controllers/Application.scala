@@ -1,6 +1,6 @@
 package controllers
 
-import play.api._
+import models._
 import play.api.mvc._
 
 object Application extends Controller {
@@ -26,9 +26,21 @@ object Application extends Controller {
    */
   def showQuestion(questionId: String) = Action { request =>
     request.session.get("TurkerID").map { user =>
-      Ok(views.html.question(user, "<h2>H2 Question title</h2><div>This is a question</div>",
-        "<input type=\"button\" value=\"Yes\" style=\"width:10%;\">" +
-          "<input type=\"button\" value=\"No\" style=\"width:10%;\">"))
+      //TODO: get the answers of the turker in the batch group
+      val question = QuestionDAO.findById(questionId.toLong)
+      if(question.isDefined){
+        val batch = BatchDAO.findById(question.get.batchId)
+        if(batch.get.allowedAnswersPerTurker > AnswerDAO.findByUserId(UserDAO.findByTurkerId(user).get.id.get).size){
+          Ok(views.html.question(user, question.get.html,
+            "<input type=\"button\" value=\"Yes\" style=\"width:10%;\">" +
+              "<input type=\"button\" value=\"No\" style=\"width:10%;\">"))
+        } else {
+          Ok("You already answered enough question from this batch. Try another hit.")
+        }
+      } else {
+        Ok("Cannot find question with id: " + questionId)
+      }
+
     }.getOrElse {
       Ok(views.html.login()).withSession("redirect"-> ("/showQuestion/"+questionId))
     }

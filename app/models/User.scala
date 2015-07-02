@@ -1,28 +1,46 @@
 package models
 
+import anorm._
+import anorm.SqlParser._
 import org.joda.time.DateTime
-import scalikejdbc._
+import play.api.db.DB
+import play.api.Play.current
+
+import scala.collection.mutable
 
 /**
  * Created by mattia on 02.07.15.
  */
-case class User(id: Long, turkerId: String, firstSeenDateTime: DateTime)
+case class User(id: Pk[Long], turkerId: String, firstSeenDateTime: DateTime)
 
-object User extends SQLSyntaxSupport[User] {
-  // override val tableName = "User"
-  // By default, column names will be cached from meta data automatically when accessing this table for the first time.
-  override val columns = Seq("id", "turker_id", "first_seen_date_time")
+object UserDAO {
+  private val userParser: RowParser[User] =
+    get[Pk[Long]]("id") ~
+      get[String]("turker_id") ~
+      get[DateTime]("first_seen_date_time") map {
+      case id ~turker_id ~first_seen_date_time =>
+        User(id, turker_id, first_seen_date_time)
+    }
 
-  def apply(p: ResultName[User])(rs: WrappedResultSet): User = new User(
-    id = rs.long(p.id),
-    turkerId = rs.string(p.turkerId),
-    firstSeenDateTime = rs.jodaDateTime(p.firstSeenDateTime)
-  )
+  def findById(id: Long): Option[User] =
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM user WHERE id = {id}").on(
+        'id -> id
+      ).as(userParser.singleOpt)
+    }
 
-  private val p = User.syntax("p")
+  def findByTurkerId(turkerId: String): Option[User] =
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM user WHERE turker_id = {turkerId}").on(
+        'turkerId -> turkerId
+      ).as(userParser.singleOpt)
+    }
 
-  def find(id: Long)(implicit session: DBSession = AutoSession): Option[User] = withSQL {
-    select.from(User as p).where.eq(p.id, id)
-  }.map(User(p.resultName)).single.apply()
-
+  def create(turkerId: String, firstSeenDateTime: DateTime): Option[Long] =
+    DB.withConnection { implicit c =>
+      SQL("INSERT INTO user(turker_id, first_seen_date_time) VALUES ({turkerId}, {firstSeenDateTime})").on(
+        'turkerId -> turkerId,
+        'firstSeenDateTime -> firstSeenDateTime
+      ).executeInsert()
+    }
 }

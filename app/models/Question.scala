@@ -1,30 +1,31 @@
 package models
 
+import anorm._
+import anorm.SqlParser._
 import org.joda.time.DateTime
-import scalikejdbc._
+import play.api.db.DB
+import play.api.Play.current
 
 /**
  * Created by mattia on 02.07.15.
  */
-case class Question(id: Long, html: String, outputCode: Long, batchId: Long, createTime: DateTime)
+case class Question(id: Pk[Long], html: String, outputCode: Long, batchId: Long, createTime: DateTime)
 
-object Question extends SQLSyntaxSupport[Question] {
-  // override val tableName = "question"
-  // By default, column names will be cached from meta data automatically when accessing this table for the first time.
-  override val columns = Seq("id", "html", "output_code", "batch_id", "create_time")
+object QuestionDAO {
+  private val questionParser: RowParser[Question] =
+    get[Pk[Long]]("id") ~
+      get[String]("html") ~
+      get[Long]("output_code") ~
+      get[Long]("batch_id") ~
+      get[DateTime]("create_time") map {
+      case id ~ html ~output_code ~batch_id ~create_time =>
+        Question(id, html, output_code, batch_id, create_time)
+    }
 
-  def apply(p: ResultName[Question])(rs: WrappedResultSet): Question = new Question(
-    id = rs.long(p.id),
-    html = rs.string(p.html),
-    outputCode = rs.long(p.outputCode),
-    batchId = rs.long(p.batchId),
-    createTime = rs.jodaDateTime(p.createTime)
-  )
-
-  private val p = Question.syntax("p")
-
-  def find(id: Long)(implicit session: DBSession = AutoSession): Option[Question] = withSQL {
-    select.from(Question as p).where.eq(p.id, id)
-  }.map(Question(p.resultName)).single.apply()
-
+  def findById(id: Long): Option[Question] =
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM question WHERE id = {id}").on(
+        'id -> id
+      ).as(questionParser.singleOpt)
+    }
 }

@@ -1,26 +1,28 @@
 package models
 
-import scalikejdbc._
+import anorm._
+import anorm.SqlParser._
+import play.api.db.DB
+import play.api.Play.current
 
 /**
  * Created by mattia on 02.07.15.
  */
-case class Batch(id: Long, allowedAnswersPerTurker: Int)
+case class Batch(id: Pk[Long], allowedAnswersPerTurker: Int) extends Serializable
 
-object Batch extends SQLSyntaxSupport[Batch] {
-  // override val tableName = "batch"
-  // By default, column names will be cached from meta data automatically when accessing this table for the first time.
-  override val columns = Seq("id", "allowed_answers_per_turker")
+object BatchDAO {
+  private val batchParser: RowParser[Batch] =
+    get[Pk[Long]]("id") ~
+      get[Int]("allowed_answers_per_turker") map {
+      case id ~ allowed_answers_per_turker =>
+        Batch(id, allowed_answers_per_turker)
+    }
 
-  def apply(p: ResultName[Batch])(rs: WrappedResultSet): Batch = new Batch(
-    id = rs.long(p.id),
-    allowedAnswersPerTurker = rs.int(p.allowedAnswersPerTurker)
-  )
-
-  private val p = Batch.syntax("p")
-
-  def find(id: Long)(implicit session: DBSession = AutoSession): Option[Batch] = withSQL {
-    select.from(Batch as p).where.eq(p.id, id)
-  }.map(Batch(p.resultName)).single.apply()
+  def findById(id: Long): Option[Batch] =
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM batch WHERE id = {id}").on(
+        'id -> id
+      ).as(batchParser.singleOpt)
+    }
 
 }
