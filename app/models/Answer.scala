@@ -17,7 +17,7 @@ object AnswerDAO {
       get[Long]("question_id") ~
       get[Long]("user_id") ~
       get[DateTime]("time") ~
-      get[String]("answerJson") map {
+      get[String]("answer_json") map {
       case id ~question_id ~user_id ~time ~answerJson =>
         Answer(id, question_id, user_id, time, answerJson)
     }
