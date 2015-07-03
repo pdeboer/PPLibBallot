@@ -1,6 +1,7 @@
 package controllers
 
 import models._
+import org.joda.time.DateTime
 import play.api.mvc._
 
 object Application extends Controller {
@@ -24,25 +25,30 @@ object Application extends Controller {
    * @param questionId
    * @return
    */
-  def showQuestion(questionId: String) = Action { request =>
+  def showQuestion(questionId: Long) = Action { request =>
     request.session.get("TurkerID").map { user =>
-      //TODO: get the answers of the turker in the batch group
-      val question = QuestionDAO.findById(questionId.toLong)
-      if(question.isDefined){
-        val batch = BatchDAO.findById(question.get.batchId)
-        if(batch.get.allowedAnswersPerTurker > AnswerDAO.findByUserId(UserDAO.findByTurkerId(user).get.id.get).size){
-          Ok(views.html.question(user, question.get.html,
-            "<input type=\"button\" value=\"Yes\" style=\"width:10%;\">" +
-              "<input type=\"button\" value=\"No\" style=\"width:10%;\">"))
-        } else {
-          Ok("You already answered enough question from this batch. Try another hit.")
-        }
+      // get the answers of the turker in the batch group
+      if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
+        Ok(views.html.question(user, QuestionDAO.findById(questionId).get))
       } else {
-        Ok("Cannot find question with id: " + questionId)
+        Unauthorized("You already answered enough question from this batch. Try another hit.")
       }
-
     }.getOrElse {
       Ok(views.html.login()).withSession("redirect"-> ("/showQuestion/"+questionId))
+    }
+  }
+
+  def isUserAllowedToAnswer(questionId: Long, userId: Long): Boolean = {
+    val question = QuestionDAO.findById(questionId)
+    if(question.isDefined){
+      val batch = BatchDAO.findById(question.get.batchId)
+      if(batch.get.allowedAnswersPerTurker > AnswerDAO.findByUserId(userId).size){
+        true
+      } else {
+        false
+      }
+    }else {
+      false
     }
   }
 
@@ -53,7 +59,20 @@ object Application extends Controller {
    * @return
    */
   def storeAnswer = Action { request =>
-    Ok("Storing answer...")
+    request.session.get("TurkerID").map { user =>
+      val questionId = request.body.asFormUrlEncoded.get("questionId").mkString.toLong
+      if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
+
+        val answer = request.body.asFormUrlEncoded.get("answer").mkString
+        AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer)
+
+        Ok(views.html.code(user, QuestionDAO.findById(questionId).get.outputCode)).withSession(request.session)
+      } else {
+        Unauthorized("You already answered this question. Try another hit.")
+      }
+    }.getOrElse {
+      Ok(views.html.login())
+    }
   }
 
 }

@@ -1,4 +1,5 @@
-@(turkerId: String, question: String, possibleAnswers: String)
+@(turkerId: String, question: Question
+        )
 
 @main("PPLibBallot - Question") {
 
@@ -17,13 +18,14 @@
     <hr style="width:100%;">
 
     <div id="question">
-        @Html(question)
+        @Html(question.html)
     </div>
 
-    <hr style="width:100%;">
-
-    <div id="possibleAnswers">
-        @Html(possibleAnswers)
-    </div>
+    <script language="javascript">
+        $(function() {
+            $("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@question.id\">");
+            console.log("Element added");
+        });
+    </script>
 
 }

@@ -4,8 +4,8 @@
 
 # Main Controller
 GET         /                           controllers.Application.index
-GET         /showQuestion/:questionId   controllers.Application.showQuestion(questionId)
-
+GET         /showQuestion/:questionId   controllers.Application.showQuestion(questionId: Long)
+POST        /storeAnswer                controllers.Application.storeAnswer
 # Login
 POST        /login                      controllers.Login.login
 POST        /logout                     controllers.Login.logout

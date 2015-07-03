@@ -29,11 +29,11 @@ object AnswerDAO {
       ).as(answerParser.singleOpt)
     }
 
-  def findByUserId(userId: Long): Option[Answer] =
+  def findByUserId(userId: Long): List[Answer] =
     DB.withConnection { implicit c =>
       SQL("SELECT * FROM answer WHERE user_id = {userId}").on(
         'userId -> userId
-      ).as(answerParser.singleOpt)
+      ).as(answerParser*)
     }
 
   def create(questionId: Long, userId: Long, time: DateTime, answerJson: String): Option[Long] =
