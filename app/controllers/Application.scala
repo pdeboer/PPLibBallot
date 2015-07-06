@@ -60,15 +60,19 @@ object Application extends Controller {
    */
   def storeAnswer = Action { request =>
     request.session.get("TurkerID").map { user =>
-      val questionId = request.body.asFormUrlEncoded.get("questionId").mkString.toLong
-      if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
+      try {
+        val questionId = request.body.asFormUrlEncoded.get("questionId").mkString.toLong
+        if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
 
-        val answer = request.body.asFormUrlEncoded.get("answer").mkString
-        AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer)
+          val answer = request.body.asFormUrlEncoded.get("answer").mkString
+          AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer)
 
-        Ok(views.html.code(user, QuestionDAO.findById(questionId).get.outputCode)).withSession(request.session)
-      } else {
-        Unauthorized("You already answered this question. Try another hit.")
+          Ok(views.html.code(user, QuestionDAO.findById(questionId).get.outputCode)).withSession(request.session)
+        } else {
+          Unauthorized("You already answered this question. Try another hit.")
+        }
+      } catch {
+        case e: Exception => Unauthorized("Invalid request format.")
       }
     }.getOrElse {
       Ok(views.html.login())
