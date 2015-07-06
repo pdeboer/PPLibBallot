@@ -4,7 +4,7 @@
 
 # Main Controller
 GET         /                           controllers.Application.index
-GET         /showQuestion/:questionId   controllers.Application.showQuestion(questionId: Long)
+GET         /showQuestion/:uuid         controllers.Application.showQuestion(uuid: String)
 POST        /storeAnswer                controllers.Application.storeAnswer
 # Login
 POST        /login                      controllers.Login.login

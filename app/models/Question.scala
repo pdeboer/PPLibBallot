@@ -9,7 +9,7 @@ import play.api.Play.current
 /**
  * Created by mattia on 02.07.15.
  */
-case class Question(id: Pk[Long], html: String, outputCode: Long, batchId: Long, createTime: DateTime)
+case class Question(id: Pk[Long], html: String, outputCode: Long, batchId: Long, createTime: DateTime, uuid: String)
 
 object QuestionDAO {
   private val questionParser: RowParser[Question] =
@@ -17,10 +17,12 @@ object QuestionDAO {
       get[String]("html") ~
       get[Long]("output_code") ~
       get[Long]("batch_id") ~
-      get[DateTime]("create_time") map {
-      case id ~ html ~output_code ~batch_id ~create_time =>
-        Question(id, html, output_code, batch_id, create_time)
+      get[DateTime]("create_time") ~
+      get[String]("uuid") map {
+      case id ~ html ~output_code ~batch_id ~create_time ~uuid =>
+        Question(id, html, output_code, batch_id, create_time, uuid)
     }
+
 
   def findById(id: Long): Option[Question] =
     DB.withConnection { implicit c =>
@@ -28,4 +30,17 @@ object QuestionDAO {
         'id -> id
       ).as(questionParser.singleOpt)
     }
+
+  def findIdByUUID(uuid: String) : Long = {
+    try {
+      DB.withConnection { implicit c =>
+        SQL("SELECT * FROM question WHERE uuid = {uuid}").on(
+          'uuid -> uuid
+        ).as(questionParser.singleOpt).get.id.get
+      }
+    } catch {
+      case e: Exception => -1
+    }
+  }
+
 }

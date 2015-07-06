@@ -25,10 +25,13 @@ object Application extends Controller {
    * If this number is equal to the maximal number of allowed answer per turker per batch, then the turker will be
    * redirected to a warning page.
    *
-   * @param questionId
+   * @param uuid
    * @return
    */
-  def showQuestion(questionId: Long) = Action { request =>
+  def showQuestion(uuid: String) = Action { request =>
+
+    val questionId = QuestionDAO.findIdByUUID(uuid)
+
     request.session.get("TurkerID").map { user =>
       // get the answers of the turker in the batch group
       if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
@@ -39,6 +42,7 @@ object Application extends Controller {
     }.getOrElse {
       Ok(views.html.login()).withSession("redirect"-> ("/showQuestion/"+questionId))
     }
+
   }
 
   def isUserAllowedToAnswer(questionId: Long, userId: Long): Boolean = {
