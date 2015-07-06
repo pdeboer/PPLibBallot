@@ -2,7 +2,10 @@ package controllers
 
 import models._
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.mvc._
+
+import scala.util.parsing.json.JSONObject
 
 object Application extends Controller {
 
@@ -64,8 +67,9 @@ object Application extends Controller {
         val questionId = request.body.asFormUrlEncoded.get("questionId").mkString.toLong
         if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
 
-          val answer = request.body.asFormUrlEncoded.get("answer").mkString
-          AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer)
+          val answer: JSONObject = JSONObject.apply(request.body.asFormUrlEncoded.get.map(m => { (m._1, m._2.mkString) } ))
+
+          AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer.toString())
 
           Ok(views.html.code(user, QuestionDAO.findById(questionId).get.outputCode)).withSession(request.session)
         } else {
