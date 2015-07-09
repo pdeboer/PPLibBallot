@@ -18,7 +18,7 @@ object AnswerDAO {
       get[Long]("user_id") ~
       get[DateTime]("time") ~
       get[String]("answer_json") map {
-      case id ~question_id ~user_id ~time ~answerJson =>
+      case id ~ question_id ~ user_id ~ time ~ answerJson =>
         Answer(id, question_id, user_id, time, answerJson)
     }
 
@@ -33,7 +33,7 @@ object AnswerDAO {
     DB.withConnection { implicit c =>
       SQL("SELECT * FROM answer WHERE user_id = {userId}").on(
         'userId -> userId
-      ).as(answerParser*)
+      ).as(answerParser *)
     }
 
   def create(questionId: Long, userId: Long, time: DateTime, answerJson: String): Option[Long] =
@@ -45,4 +45,13 @@ object AnswerDAO {
         'answerJson -> answerJson
       ).executeInsert()
     }
+
+  def getListOfAnswersOfUserAndBatch(userId: Long, batchId: Long): List[Answer] = {
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM answer as a, question as q WHERE a.user_id = {userId} AND q.batch_id = {batchId} AND a.question_id = q.id").on(
+        'userId -> userId,
+        'batchId -> batchId
+      ).as(answerParser *)
+    }
+  }
 }

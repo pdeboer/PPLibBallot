@@ -40,7 +40,7 @@ object Application extends Controller {
         Unauthorized("You already answered enough question from this batch. Try another hit.")
       }
     }.getOrElse {
-      Ok(views.html.login()).withSession("redirect"-> ("/showQuestion/"+questionId))
+      Ok(views.html.login()).withSession("redirect"-> ("/showQuestion/"+uuid))
     }
 
   }
@@ -49,7 +49,7 @@ object Application extends Controller {
     val question = QuestionDAO.findById(questionId)
     if(question.isDefined){
       val batch = BatchDAO.findById(question.get.batchId)
-      if(batch.get.allowedAnswersPerTurker > AnswerDAO.findByUserId(userId).size){
+      if(batch.get.allowedAnswersPerTurker > AnswerDAO.getListOfAnswersOfUserAndBatch(userId, question.get.batchId).size){
         true
       } else {
         false
@@ -69,6 +69,7 @@ object Application extends Controller {
     request.session.get("TurkerID").map { user =>
       try {
         val questionId = request.body.asFormUrlEncoded.get("questionId").mkString.toLong
+
         if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
 
           val answer: JSONObject = JSONObject.apply(request.body.asFormUrlEncoded.get.map(m => { (m._1, m._2.mkString) } ))
