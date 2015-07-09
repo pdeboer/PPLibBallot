@@ -46,12 +46,22 @@ object AnswerDAO {
       ).executeInsert()
     }
 
-  def getListOfAnswersOfUserAndBatch(userId: Long, batchId: Long): List[Answer] = {
+  def countUserAnswersForBatch(userId: Long, batchId: Long): Int = {
     DB.withConnection { implicit c =>
       SQL("SELECT * FROM answer as a, question as q WHERE a.user_id = {userId} AND q.batch_id = {batchId} AND a.question_id = q.id").on(
         'userId -> userId,
         'batchId -> batchId
-      ).as(answerParser *)
+      ).as(answerParser *).size
     }
   }
+
+  def isUserAllowedToAnswerQuestion(userId: Long, questionId: Long): Boolean = {
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM answer WHERE question_id = {questionId} AND user_id = {userId} ").on(
+        'userId -> userId,
+        'questionId -> questionId
+      ).as(answerParser *).size == 0
+    }
+  }
+
 }

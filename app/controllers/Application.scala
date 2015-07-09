@@ -47,12 +47,16 @@ object Application extends Controller {
 
   def isUserAllowedToAnswer(questionId: Long, userId: Long): Boolean = {
     val question = QuestionDAO.findById(questionId)
-    if(question.isDefined){
+    if(question.isDefined && AnswerDAO.isUserAllowedToAnswerQuestion(userId, questionId)){
       val batch = BatchDAO.findById(question.get.batchId)
-      if(batch.get.allowedAnswersPerTurker > AnswerDAO.getListOfAnswersOfUserAndBatch(userId, question.get.batchId).size){
+      if(batch.get.allowedAnswersPerTurker == 0) {
         true
-      } else {
-        false
+      }else {
+        if(batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAnswersForBatch(userId, question.get.batchId)){
+          true
+        } else {
+          false
+        }
       }
     }else {
       false
