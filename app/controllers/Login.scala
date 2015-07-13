@@ -13,7 +13,9 @@ object Login extends Controller {
   def login = Action { request =>
     val turkerId = request.body.asFormUrlEncoded.get("TurkerID").head
 
-    UserDAO.findByTurkerId(turkerId).getOrElse(UserDAO.create(turkerId, new DateTime()))
+    if(UserDAO.findByTurkerId(turkerId).isEmpty) {
+      UserDAO.create(turkerId, new DateTime())
+    }
 
     // Redirect if necessary otherwise just go to index
     request.session.get("redirect").map { redirect =>
