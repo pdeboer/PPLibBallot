@@ -2,6 +2,7 @@ package controllers
 
 import models._
 import org.joda.time.DateTime
+import play.Configuration
 import play.api.Logger
 import play.api.mvc._
 
@@ -40,7 +41,7 @@ object Application extends Controller {
         Unauthorized("You already answered enough question from this batch. Try another hit.")
       }
     }.getOrElse {
-      Ok(views.html.login()).withSession("redirect"-> ("/showQuestion/"+uuid))
+      Ok(views.html.login()).withSession("redirect"-> (Configuration.root().getString("application.context", "")+"/showQuestion/"+uuid))
     }
 
   }
