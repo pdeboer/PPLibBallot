@@ -1,14 +1,12 @@
-@(turkerId: String, question: Question
-        )
+@(turkerId: String, question: Question)
 
 @main("PPLibBallot - Question") {
 
-    <h1>
-        Hi @turkerId<br>
-        <form action="/logout" method="post">
-            <input type="submit" value="Logout">
-        </form>
-    </h1>
+    <h3>Hi @turkerId</h3>
+    <!--<form action="/logout" method="post">
+        <input type="submit" class="btn btn-warning" value="Logout">
+    </form>-->
+
 
     <div id="question">
         @Html(question.html)
