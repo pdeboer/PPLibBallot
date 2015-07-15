@@ -7,8 +7,8 @@
 
     <div>
         <form action="@(Configuration.root().getString("application.context",""))/login" method="post">
-            <input type="text" placeholder="Your TurkerID" name="TurkerID" required>
-            <input type="submit" value="Login">
+            <input type="text" class="form-control" placeholder="Your TurkerID" name="TurkerID" required>
+            <input type="submit" value="Login" class="btn btn-success">
         </form>
     </div>
 
