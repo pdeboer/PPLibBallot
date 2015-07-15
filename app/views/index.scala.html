@@ -1,9 +1,10 @@
+@import play.Configuration
 @(turkerId: String)
 
 @main("Welcome to PPLibBallot") {
     <h1>Welcome to PPLibBallot</h1>
     <h3>Your username is: @turkerId</h3>
-    <form action="/logout" method="post">
+    <form action="@(Configuration.root().getString("application.context",""))/logout" method="post">
         <input type="submit" value="Logout">
     </form>
 }
