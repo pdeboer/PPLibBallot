@@ -1,4 +1,5 @@
-@(turkerId: String, question: Question)
+@import play.Configuration
+@(turkerId: String, question: Question, assetIds: List[Long])
 
 @main("PPLibBallot - Question") {
 
@@ -17,6 +18,12 @@
             $("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@question.id\">");
             console.log("Element added");
         });
+
+        $(function() {
+            $("#assets").append("<a href=\"@(Configuration.root().getString("application.context","")+"/assetsBallot/"+assetIds.head)\" target=\"_blank\">here.</a>");
+            console.log("Asset with id: " + @assetIds.head + " added");
+        })
+
     </script>
 
 }

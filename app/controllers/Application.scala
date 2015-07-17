@@ -18,6 +18,19 @@ object Application extends Controller {
     }
   }
 
+  def showAsset(id: Long) = Action { request =>
+    request.session.get("TurkerID").map { user =>
+      val asset = AssetDAO.findById(id)
+      if (asset.isDefined) {
+        Ok(asset.get.byteArray).as(asset.get.contentType)
+      } else {
+        UnprocessableEntity("There exists no asset with id: " + id)
+      }
+    }.getOrElse {
+      Ok(views.html.login())
+    }
+  }
+
   /**
    * Show a question.
    * The method below counts the number of answers already sent by the turker and loads the question
@@ -36,7 +49,7 @@ object Application extends Controller {
     request.session.get("TurkerID").map { user =>
       // get the answers of the turker in the batch group
       if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
-        Ok(views.html.question(user, QuestionDAO.findById(questionId).get))
+        Ok(views.html.question(user, QuestionDAO.findById(questionId).get, AssetDAO.getAllIdByQuestionId(questionId)))
       } else {
         Unauthorized("You already answered enough question from this batch. Try another hit.")
       }
@@ -77,7 +90,7 @@ object Application extends Controller {
 
         if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
 
-          val answer: JSONObject = JSONObject.apply(request.body.asFormUrlEncoded.get.map(m => { (m._1, m._2.mkString) } ))
+          val answer: JSONObject = JSONObject.apply(request.body.asFormUrlEncoded.get.map(m => { (m._1, m._2.mkString(",")) } ))
 
           AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer.toString())
 

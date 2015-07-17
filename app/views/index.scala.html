@@ -4,7 +4,7 @@
 @main("Welcome to PPLibBallot") {
     <h1>Welcome to PPLibBallot</h1>
     <h3>Your username is: @turkerId</h3>
-    <form action="@(Configuration.root().getString("application.context",""))/logout" method="post">
+    <form action="@(Configuration.root().getString("application.context",""))/logout" method="get">
         <input type="submit" value="Logout" class="btn btn-danger">
     </form>
 }
