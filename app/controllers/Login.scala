@@ -1,6 +1,6 @@
 package controllers
 
-import models.{UserDAO, User}
+import models.UserDAO
 import org.joda.time.DateTime
 import play.api.mvc._
 
@@ -11,7 +11,7 @@ object Login extends Controller {
   }
 
   def login = Action { request =>
-    val turkerId = request.body.asFormUrlEncoded.get("TurkerID").head
+    val turkerId = getTurkerIDFromRequest(request)
 
     if(UserDAO.findByTurkerId(turkerId).isEmpty) {
       UserDAO.create(turkerId, new DateTime())
@@ -26,4 +26,8 @@ object Login extends Controller {
   }
 
 
+  def getTurkerIDFromRequest(request: Request[AnyContent]): String = {
+    request.queryString.getOrElse("TurkerID",List("")).head
+    //request.body.asFormUrlEncoded.get("TurkerID").head
+  }
 }
