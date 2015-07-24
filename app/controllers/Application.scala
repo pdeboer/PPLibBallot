@@ -53,7 +53,7 @@ object Application extends Controller {
 				Unauthorized("You already answered enough question from this batch. Try another hit.")
 			}
 		}.getOrElse {
-			Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("application.context", "") + "/showQuestion/" + uuid))
+			Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix", "") + "/showQuestion/" + uuid))
 		}
 
 	}
