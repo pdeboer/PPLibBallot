@@ -61,8 +61,8 @@ object Application extends Controller {
 
   def isUserAllowedToAnswer(questionId: Long, userId: Long): Boolean = {
     val question = QuestionDAO.findById(questionId)
-    // The question exists and there is no answer yet for the current user
-    if(question.isDefined && AnswerDAO.isUserAllowedToAnswerQuestion(userId, questionId)){
+    // The question exists and there is no answer yet in the DB
+    if(question.isDefined && !AnswerDAO.existsAnswerForQuestionAndUser(userId, questionId) && AnswerDAO.countAnswersForQuestion(questionId) == 0){
       val batch = BatchDAO.findById(question.get.batchId)
       if(batch.get.allowedAnswersPerTurker == 0) {
         true

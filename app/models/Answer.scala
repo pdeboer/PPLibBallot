@@ -55,12 +55,20 @@ object AnswerDAO {
     }
   }
 
-  def isUserAllowedToAnswerQuestion(userId: Long, questionId: Long): Boolean = {
+  def countAnswersForQuestion(questionId: Long): Int = {
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM answer as a WHERE a.question_id = {questionId}").on(
+        'questionId -> questionId
+      ).as(answerParser *).size
+    }
+  }
+
+  def existsAnswerForQuestionAndUser(userId: Long, questionId: Long): Boolean = {
     DB.withConnection { implicit c =>
       SQL("SELECT * FROM answer WHERE question_id = {questionId} AND user_id = {userId} ").on(
         'userId -> userId,
         'questionId -> questionId
-      ).as(answerParser *).size == 0
+      ).as(answerParser *).size != 0
     }
   }
 
