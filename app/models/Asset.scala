@@ -12,16 +12,17 @@ import play.api.Play.current
 /**
  * Created by mattia on 02.07.15.
  */
-case class Asset(id: Pk[Long], byteArray: Array[Byte], contentType: String, questionId: Long) extends Serializable
+case class Asset(id: Pk[Long], byteArray: Array[Byte], contentType: String, questionId: Long, filename: String) extends Serializable
 
 object AssetDAO {
   private val assetParser: RowParser[Asset] =
     get[Pk[Long]]("id") ~
       bytes("byte_array") ~
       get[String]("content_type") ~
-      get[Long]("question_id") map {
-      case id ~ byte_array ~ content_type ~ question_id =>
-        Asset(id, byte_array, content_type, question_id)
+      get[Long]("question_id") ~
+      get[String]("filename") map {
+      case id ~ byte_array ~ content_type ~ question_id ~ filename =>
+        Asset(id, byte_array, content_type, question_id, filename)
     }
 
   /**

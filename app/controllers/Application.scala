@@ -49,7 +49,7 @@ object Application extends Controller {
     request.session.get("TurkerID").map { user =>
       // get the answers of the turker in the batch group
       if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
-        Ok(views.html.question(user, QuestionDAO.findById(questionId).get, AssetDAO.getAllIdByQuestionId(questionId)))
+        Ok(views.html.question(user, QuestionDAO.findById(questionId).get, AssetDAO.getAllIdByQuestionId(questionId), AssetDAO.findByQuestionId(questionId).head.filename))
       } else {
         Unauthorized("You already answered enough question from this batch. Try another hit.")
       }
@@ -87,11 +87,12 @@ object Application extends Controller {
   def storeAnswer = Action { request =>
     request.session.get("TurkerID").map { user =>
       try {
-        val questionId = request.body.asFormUrlEncoded.get("questionId").mkString.toLong
+
+        val questionId = request.getQueryString("questionId").mkString.toLong
 
         if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
 
-          val answer: JSONObject = JSONObject.apply(request.body.asFormUrlEncoded.get.map(m => { (m._1, m._2.mkString(",")) } ))
+          val answer: JSONObject = JSONObject.apply(request.queryString.map(m => { (m._1, m._2.mkString(",")) } ))
 
           AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer.toString())
 
@@ -100,7 +101,10 @@ object Application extends Controller {
           Unauthorized("You already answered this question. Try another hit.")
         }
       } catch {
-        case e: Exception => Unauthorized("Invalid request format.")
+        case e: Exception => {
+          e.printStackTrace()
+          Unauthorized("Invalid request format.")
+        }
       }
     }.getOrElse {
       Ok(views.html.login())

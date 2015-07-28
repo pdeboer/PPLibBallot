@@ -1,5 +1,5 @@
 @import play.Configuration
-@(turkerId: String, question: Question, assetIds: List[Long])
+@(turkerId: String, question: Question, assetIds: List[Long], pdfFileName: String)
 
 @main("PPLibBallot - Question") {
 
@@ -16,7 +16,8 @@
     <script language="javascript">
         $(function() {
             $("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@question.id\">");
-            console.log("Element added");
+            $("form").append("<input type=\"hidden\" name=\"pdfFileName\" value=\"@pdfFileName\">");
+            console.log("Hidden elements added");
         });
 
         $(function() {

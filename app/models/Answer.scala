@@ -18,8 +18,8 @@ object AnswerDAO {
       get[Long]("user_id") ~
       get[DateTime]("time") ~
       get[String]("answer_json") map {
-      case id ~ question_id ~ user_id ~ time ~ answerJson =>
-        Answer(id, question_id, user_id, time, answerJson)
+      case id ~ question_id ~ user_id ~ time ~ answer_json =>
+        Answer(id, question_id, user_id, time, answer_json)
     }
 
   def findById(id: Long): Option[Answer] =

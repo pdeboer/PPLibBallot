@@ -7,7 +7,7 @@ GET         /                           controllers.Application.index
 GET         /showQuestion/:uuid         controllers.Application.showQuestion(uuid: String)
 GET         /storeAnswer                controllers.Application.storeAnswer
 # Login
-GET        /login                      controllers.Login.login
+GET         /login                      controllers.Login.login
 GET         /logout                     controllers.Login.logout
 
 GET         /assetsBallot/:id           controllers.Application.showAsset(id: Long)
