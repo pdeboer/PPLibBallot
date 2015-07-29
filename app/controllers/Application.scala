@@ -6,6 +6,7 @@ import play.Configuration
 import play.api.Logger
 import play.api.mvc._
 
+import scala.util.Random
 import scala.util.parsing.json.JSONObject
 
 object Application extends Controller {
@@ -48,32 +49,40 @@ object Application extends Controller {
 
     request.session.get("TurkerID").map { user =>
       // get the answers of the turker in the batch group
-      if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
+      val userFound = UserDAO.findByTurkerId(user)
+
+      if(userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get)){
         Ok(views.html.question(user, QuestionDAO.findById(questionId).get, AssetDAO.getAllIdByQuestionId(questionId), AssetDAO.findByQuestionId(questionId).head.filename))
-      } else {
+      } else if(userFound.isDefined) {
         Unauthorized("You already answered enough question from this batch. Try another hit.")
+      } else {
+        Ok(views.html.login()).withSession("redirect" -> ("http://"+request.host + Configuration.root().getString("application.context", "")+"showQuestion/"+uuid))
       }
     }.getOrElse {
-      Ok(views.html.login()).withSession("redirect"-> (Configuration.root().getString("application.context", "")+"/showQuestion/"+uuid))
+      Ok(views.html.login()).withSession("redirect"-> ("http://"+request.host + Configuration.root().getString("application.context", "")+"showQuestion/"+uuid))
     }
 
   }
 
   def isUserAllowedToAnswer(questionId: Long, userId: Long): Boolean = {
     val question = QuestionDAO.findById(questionId)
-    // The question exists and there is no answer yet in the DB
-    if(question.isDefined && !AnswerDAO.existsAnswerForQuestionAndUser(userId, questionId) && AnswerDAO.countAnswersForQuestion(questionId) == 0){
+    // The question exists and there is no answer yet accepted in the DB
+    if(question.isDefined && !AnswerDAO.existsAcceptedAnswerForQuestionId(questionId)){
       val batch = BatchDAO.findById(question.get.batchId)
       if(batch.get.allowedAnswersPerTurker == 0) {
+        println("User is allowed to answer with infinite amount")
         true
       }else {
-        if(batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAnswersForBatch(userId, question.get.batchId)){
+        if(batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAcceptedAnswersForBatch(userId, question.get.batchId)){
+          println("User is allowed to answer up to X answer")
           true
         } else {
+          println("User cannot answer -> reached max number of answer")
           false
         }
       }
     }else {
+      println("There alerady exists an answer with accepted = true")
       false
     }
   }
@@ -90,13 +99,15 @@ object Application extends Controller {
 
         val questionId = request.getQueryString("questionId").mkString.toLong
 
+        val outputCode = Math.abs(new Random(new DateTime().getMillis).nextLong())
+
         if(isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)){
 
           val answer: JSONObject = JSONObject.apply(request.queryString.map(m => { (m._1, m._2.mkString(",")) } ))
 
-          AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer.toString())
+          AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer.toString(), outputCode)
 
-          Ok(views.html.code(user, QuestionDAO.findById(questionId).get.outputCode)).withSession(request.session)
+          Ok(views.html.code(user, outputCode)).withSession(request.session)
         } else {
           Unauthorized("You already answered this question. Try another hit.")
         }

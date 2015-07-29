@@ -9,7 +9,7 @@ import play.api.Play.current
 /**
  * Created by mattia on 02.07.15.
  */
-case class Answer(id: Pk[Long], questionId: Long, userId: Long, time: DateTime, answerJson: String) extends Serializable
+case class Answer(id: Pk[Long], questionId: Long, userId: Long, time: DateTime, answerJson: String, expectedOutputCode: Long, accepted: Boolean) extends Serializable
 
 object AnswerDAO {
   private val answerParser: RowParser[Answer] =
@@ -17,9 +17,11 @@ object AnswerDAO {
       get[Long]("question_id") ~
       get[Long]("user_id") ~
       get[DateTime]("time") ~
-      get[String]("answer_json") map {
-      case id ~ question_id ~ user_id ~ time ~ answer_json =>
-        Answer(id, question_id, user_id, time, answer_json)
+      get[String]("answer_json") ~
+      get[Long]("expected_output_code") ~
+      get[Boolean]("accepted") map {
+      case id ~ question_id ~ user_id ~ time ~ answer_json ~ expected_output_code ~ accepted =>
+        Answer(id, question_id, user_id, time, answer_json, expected_output_code, accepted)
     }
 
   def findById(id: Long): Option[Answer] =
@@ -29,6 +31,13 @@ object AnswerDAO {
       ).as(answerParser.singleOpt)
     }
 
+  def findAllByQuestionId(questionId: Long): List[Answer] =
+    DB.withConnection { implicit c =>
+      SQL("SELECT * FROM answer WHERE question_id = {questionId}").on(
+        'questionId -> questionId
+      ).as(answerParser *)
+    }
+
   def findByUserId(userId: Long): List[Answer] =
     DB.withConnection { implicit c =>
       SQL("SELECT * FROM answer WHERE user_id = {userId}").on(
@@ -36,19 +45,21 @@ object AnswerDAO {
       ).as(answerParser *)
     }
 
-  def create(questionId: Long, userId: Long, time: DateTime, answerJson: String): Option[Long] =
+  def create(questionId: Long, userId: Long, time: DateTime, answerJson: String, expected_output_code: Long, accepted: Boolean = false): Option[Long] =
     DB.withConnection { implicit c =>
-      SQL("INSERT INTO answer(question_id, user_id, time, answer_json) VALUES ({questionId}, {userId}, {time}, {answerJson})").on(
+      SQL("INSERT INTO answer(question_id, user_id, time, answer_json, expected_output_code, accepted) VALUES ({questionId}, {userId}, {time}, {answerJson}, {expected_output_code}, {accepted})").on(
         'questionId -> questionId,
         'userId -> userId,
         'time -> time,
-        'answerJson -> answerJson
+        'answerJson -> answerJson,
+        'expected_output_code -> expected_output_code,
+        'accepted -> accepted
       ).executeInsert()
     }
 
-  def countUserAnswersForBatch(userId: Long, batchId: Long): Int = {
+  def countUserAcceptedAnswersForBatch(userId: Long, batchId: Long): Int = {
     DB.withConnection { implicit c =>
-      SQL("SELECT * FROM answer as a, question as q WHERE a.user_id = {userId} AND q.batch_id = {batchId} AND a.question_id = q.id").on(
+      SQL("SELECT * FROM answer as a, question as q WHERE a.user_id = {userId} AND a.accepted = true AND q.batch_id = {batchId} AND a.question_id = q.id").on(
         'userId -> userId,
         'batchId -> batchId
       ).as(answerParser *).size
@@ -70,6 +81,10 @@ object AnswerDAO {
         'questionId -> questionId
       ).as(answerParser *).size != 0
     }
+  }
+
+  def existsAcceptedAnswerForQuestionId(questionId: Long) : Boolean = {
+    findAllByQuestionId(questionId).exists(answer => answer.accepted == true)
   }
 
 }

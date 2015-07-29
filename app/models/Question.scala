@@ -9,18 +9,17 @@ import play.api.Play.current
 /**
  * Created by mattia on 02.07.15.
  */
-case class Question(id: Pk[Long], html: String, outputCode: Long, batchId: Long, createTime: DateTime, uuid: String)
+case class Question(id: Pk[Long], html: String, batchId: Long, createTime: DateTime, uuid: String)
 
 object QuestionDAO {
   private val questionParser: RowParser[Question] =
     get[Pk[Long]]("id") ~
       get[String]("html") ~
-      get[Long]("output_code") ~
       get[Long]("batch_id") ~
       get[DateTime]("create_time") ~
       get[String]("uuid") map {
-      case id ~ html ~output_code ~batch_id ~create_time ~uuid =>
-        Question(id, html, output_code, batch_id, create_time, uuid)
+      case id ~ html ~batch_id ~create_time ~uuid =>
+        Question(id, html, batch_id, create_time, uuid)
     }
 
 
