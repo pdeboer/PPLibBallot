@@ -54,7 +54,7 @@ object Application extends Controller {
       if(userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get)){
         Ok(views.html.question(user, QuestionDAO.findById(questionId).get, AssetDAO.getAllIdByQuestionId(questionId), AssetDAO.findByQuestionId(questionId).head.filename))
       } else if(userFound.isDefined) {
-        Unauthorized("You already answered enough question from this batch. Try another hit.")
+        Unauthorized("This question has already been answered")
       } else {
         Ok(views.html.login()).withSession("redirect" -> ("http://"+request.host + Configuration.root().getString("application.context", "")+"showQuestion/"+uuid))
       }
@@ -74,15 +74,12 @@ object Application extends Controller {
         true
       }else {
         if(batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAcceptedAnswersForBatch(userId, question.get.batchId)){
-          println("User is allowed to answer up to X answer")
           true
         } else {
-          println("User cannot answer -> reached max number of answer")
           false
         }
       }
     }else {
-      println("There alerady exists an answer with accepted = true")
       false
     }
   }
