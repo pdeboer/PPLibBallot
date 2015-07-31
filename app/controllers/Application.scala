@@ -70,7 +70,6 @@ object Application extends Controller {
     if(question.isDefined && !AnswerDAO.existsAcceptedAnswerForQuestionId(questionId)){
       val batch = BatchDAO.findById(question.get.batchId)
       if(batch.get.allowedAnswersPerTurker == 0) {
-        println("User is allowed to answer with infinite amount")
         true
       }else {
         if(batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAcceptedAnswersForBatch(userId, question.get.batchId)){
@@ -106,7 +105,7 @@ object Application extends Controller {
 
           Ok(views.html.code(user, outputCode)).withSession(request.session)
         } else {
-          Unauthorized("You already answered this question. Try another hit.")
+          Unauthorized("This question has already been answered.")
         }
       } catch {
         case e: Exception => {

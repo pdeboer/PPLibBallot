@@ -21,7 +21,7 @@
         });
 
         $(function() {
-            $("#assets").append("<a href=\"@(Configuration.root().getString("assetPrefix","")+"/assetsBallot/"+assetIds.head)\" target=\"_blank\">here.</a>");
+            $("#assets").append("<a href=\"@(Configuration.root().getString("assetPrefix",""))/assetsBallot/@assetIds.head\" target=\"_blank\">here.</a>");
             console.log("Asset with id: " + @assetIds.head + " added");
         })
 
