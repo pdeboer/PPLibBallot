@@ -10,7 +10,7 @@
 
 
     <div id="question">
-        @Html(question.html)
+        @Html(question.html.replaceAll("\\Q<![CDATA[\\E", "").replaceAll("\\Q]]>\\E", ""))
     </div>
 
     <script language="javascript">
