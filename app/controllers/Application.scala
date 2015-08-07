@@ -3,7 +3,6 @@ package controllers
 import models._
 import org.joda.time.DateTime
 import play.Configuration
-import play.api.Logger
 import play.api.mvc._
 
 import scala.util.Random
@@ -56,10 +55,10 @@ object Application extends Controller {
       } else if(userFound.isDefined) {
         Unauthorized("This question has already been answered")
       } else {
-        Ok(views.html.login()).withSession("redirect" -> ("http://"+request.host + Configuration.root().getString("application.context", "")+"showQuestion/"+uuid))
+        Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "showQuestion/" + uuid))
       }
     }.getOrElse {
-      Ok(views.html.login()).withSession("redirect"-> ("http://"+request.host + Configuration.root().getString("application.context", "")+"showQuestion/"+uuid))
+      Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "showQuestion/" + uuid))
     }
 
   }
