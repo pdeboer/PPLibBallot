@@ -55,10 +55,10 @@ object Application extends Controller {
       } else if(userFound.isDefined) {
         Unauthorized("This question has already been answered")
       } else {
-        Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "showQuestion/" + uuid))
+        Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion/" + uuid))
       }
     }.getOrElse {
-      Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "showQuestion/" + uuid))
+      Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion/" + uuid))
     }
 
   }
