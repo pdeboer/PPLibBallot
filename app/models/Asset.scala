@@ -12,17 +12,27 @@ import play.api.Play.current
 /**
  * Created by mattia on 02.07.15.
  */
-case class Asset(id: Pk[Long], byteArray: Array[Byte], contentType: String, questionId: Long, filename: String) extends Serializable
+case class Asset(id: Pk[Long], hash_code: String, byteArray: Array[Byte], contentType: String, filename: String) extends Serializable
+
+case class Question2Assets(id: Pk[Long], questionId: Long, assetId: Long) extends Serializable
 
 object AssetDAO {
   private val assetParser: RowParser[Asset] =
     get[Pk[Long]]("id") ~
+      get[String]("hash_code") ~
       bytes("byte_array") ~
       get[String]("content_type") ~
-      get[Long]("question_id") ~
       get[String]("filename") map {
-      case id ~ byte_array ~ content_type ~ question_id ~ filename =>
-        Asset(id, byte_array, content_type, question_id, filename)
+      case id ~ hash_code ~ byte_array ~ content_type ~ filename =>
+        Asset(id, hash_code, byte_array, content_type, filename)
+    }
+
+  private val question2AssetsParser: RowParser[Question2Assets] =
+    get[Pk[Long]]("id") ~
+      get[Long]("question_id") ~
+      get[Long]("asset_id") map {
+      case id ~ question_id ~ asset_id =>
+        Question2Assets(id, question_id, asset_id)
     }
 
   /**
@@ -68,12 +78,19 @@ object AssetDAO {
       ).as(assetParser.singleOpt)
     }
 
-  def findByQuestionId(questionId: Long): List[Asset] =
-    DB.withConnection { implicit c =>
-      SQL("SELECT * FROM assets WHERE question_id = {questionId}").on(
+  def findByQuestionId(questionId: Long): List[Asset] = {
+    val assetIds = DB.withConnection { implicit c =>
+      SQL("SELECT * FROM question2assets WHERE question_id = {questionId}").on(
         'questionId -> questionId
-      ).as(assetParser *)
+      ).as(question2AssetsParser *)
     }
 
+    assetIds.map(q2a => {
+      findById(q2a.assetId).get
+    })
+  }
+
   def getAllIdByQuestionId(questionId: Long) : List[Long] = findByQuestionId(questionId).map(_.id.get)
+
+  def getAllAssetsByQuestionId(questionId: Long): List[Asset] = findByQuestionId(questionId)
 }

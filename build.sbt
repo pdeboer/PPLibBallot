@@ -14,4 +14,5 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq( jdbc , anorm , cache , ws )
 
-unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )  
+unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
+

@@ -1,5 +1,7 @@
 @import play.Configuration
-@(turkerId: String, question: Question, assetIds: List[Long], pdfFileName: String)
+@import org.apache.commons.codec.binary.Base64
+
+@(turkerId: String, questionId: Long, html: String, js: String, pdfAssetId: Long, pdfFileName: String)
 
 @main("PPLibBallot - Question") {
 
@@ -10,19 +12,20 @@
 
 
     <div id="question">
-        @Html(question.html.replaceAll("\\Q<![CDATA[\\E", "").replaceAll("\\Q]]>\\E", ""))
+        @Html(html)
     </div>
+
+    @Html(js)
 
     <script language="javascript">
         $(function() {
-            $("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@question.id\">");
+            $("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@questionId\">");
             $("form").append("<input type=\"hidden\" name=\"pdfFileName\" value=\"@pdfFileName\">");
             console.log("Hidden elements added");
         });
 
         $(function() {
-            $("#assets").append("<a href=\"@(Configuration.root().getString("assetPrefix",""))/assetsBallot/@assetIds.head\" target=\"_blank\">here.</a>");
-            console.log("Asset with id: " + @assetIds.head + " added");
+            $("#assets").append("<a href=\"@(Configuration.root().getString("assetPrefix",""))/assetsBallot/@pdfAssetId\" target=\"_blank\">here.</a>");
         })
 
     </script>

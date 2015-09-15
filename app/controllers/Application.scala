@@ -1,6 +1,7 @@
 package controllers
 
 import models._
+import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import play.Configuration
 import play.api.mvc._
@@ -51,7 +52,22 @@ object Application extends Controller {
       val userFound = UserDAO.findByTurkerId(user)
 
       if(userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get)){
-        Ok(views.html.question(user, QuestionDAO.findById(questionId).get, AssetDAO.getAllIdByQuestionId(questionId), AssetDAO.findByQuestionId(questionId).head.filename))
+        val assets = AssetDAO.getAllAssetsByQuestionId(questionId)
+
+        val snippet = assets.find(_.contentType.equalsIgnoreCase("image/png"))
+          .getOrElse(Asset(anorm.NotAssigned, "", Array.empty[Byte], "image/png", "")).byteArray
+
+        val js = assets.find(_.contentType.equalsIgnoreCase("application/javascript"))
+          .getOrElse(Asset(anorm.NotAssigned, "", Array.empty[Byte], "application/javascript", "")).byteArray
+
+        val question = QuestionDAO.findById(questionId).get
+
+        val cleanedHTML = removeCDATA(question.html)
+        val html = insertSnippetInHTMLPage(cleanedHTML, Base64.encodeBase64String(snippet))
+
+        val pdfAsset = AssetDAO.findByQuestionId(questionId).find(_.contentType.equalsIgnoreCase("application/pdf")).get
+
+        Ok(views.html.question(user, question.id.get, html, removeCDATA(new String(js)), pdfAsset.id.get, pdfAsset.filename))
       } else if(userFound.isDefined) {
         Unauthorized("This question has already been answered")
       } else {
@@ -61,6 +77,14 @@ object Application extends Controller {
       Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion/" + uuid))
     }
 
+  }
+
+  def insertSnippetInHTMLPage(html: String, snippet: String): String = {
+    html.replace("<img id=\"snippet\" src=\"\" width=\"100%\"></img>", "<img id=\"snippet\" src=\"data:image/gif;base64,"+ snippet+"\" width=\"100%\"></img>")
+  }
+  
+  def removeCDATA(html: String): String = {
+    html.replaceAll("\\Q<![CDATA[\\E", "").replaceAll("\\Q]]>\\E", "")
   }
 
   def isUserAllowedToAnswer(questionId: Long, userId: Long): Boolean = {
