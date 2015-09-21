@@ -23,7 +23,12 @@ object Application extends Controller {
     request.session.get("TurkerID").map { user =>
       val asset = AssetDAO.findById(id)
       if (asset.isDefined) {
-        Ok(asset.get.byteArray).as(asset.get.contentType)
+        val contentType = asset.get.contentType
+        if(contentType.equalsIgnoreCase("application/pdf")){
+          Ok(asset.get.byteArray).as(contentType)
+        }else {
+          Ok(asset.get.byteArray)
+        }
       } else {
         UnprocessableEntity("There exists no asset with id: " + id)
       }
@@ -52,22 +57,8 @@ object Application extends Controller {
       val userFound = UserDAO.findByTurkerId(user)
 
       if(userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get)){
-        val assets = AssetDAO.getAllAssetsByQuestionId(questionId)
-
-        val snippet = assets.find(_.contentType.equalsIgnoreCase("image/png"))
-          .getOrElse(Asset(anorm.NotAssigned, "", Array.empty[Byte], "image/png", "")).byteArray
-
-        val js = assets.find(_.contentType.equalsIgnoreCase("application/javascript"))
-          .getOrElse(Asset(anorm.NotAssigned, "", Array.empty[Byte], "application/javascript", "")).byteArray
-
         val question = QuestionDAO.findById(questionId).get
-
-        val cleanedHTML = removeCDATA(question.html)
-        val html = insertSnippetInHTMLPage(cleanedHTML, Base64.encodeBase64String(snippet))
-
-        val pdfAsset = AssetDAO.findByQuestionId(questionId).find(_.contentType.equalsIgnoreCase("application/pdf")).get
-
-        Ok(views.html.question(user, question.id.get, html, removeCDATA(new String(js)), pdfAsset.id.get, pdfAsset.filename))
+        Ok(views.html.question(user, question.html, questionId))
       } else if(userFound.isDefined) {
         Unauthorized("This question has already been answered")
       } else {
