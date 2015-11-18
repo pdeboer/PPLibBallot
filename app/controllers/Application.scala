@@ -57,16 +57,16 @@ object Application extends Controller {
 			// get the answers of the turker in the batch group
 			val userFound = UserDAO.findByTurkerId(user)
 
-			if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get)) {
+			if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get, secret)) {
 				val question = QuestionDAO.findById(questionId).get
 				Ok(views.html.question(user, question.html, questionId))
 			} else if (userFound.isDefined) {
 				Unauthorized("This question has already been answered")
 			} else {
-				Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion/" + uuid))
+				Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
 			}
 		}.getOrElse {
-			Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion/" + uuid))
+			Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
 		}
 
 	}
