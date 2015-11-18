@@ -1,19 +1,18 @@
-@import play.Configuration
-@import org.apache.commons.codec.binary.Base64
+
 
 @(turkerId: String, question: String, questionId: Long)
 
 @main("PPLibBallot - Question") {
 
-    <h3>Hi @turkerId</h3>
+	<h3>Hi @turkerId</h3>
 
-    @Html(question)
+	@Html(question)
 
-    <script language="javascript">
-        $(function() {
-            $("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@questionId\">");
-            console.log("Hidden elements added");
-        });
-    </script>
+	<script language="javascript">
+			$(function() {
+				$("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@questionId\">");
+				console.log("Hidden elements added");
+			});
+	</script>
 
 }

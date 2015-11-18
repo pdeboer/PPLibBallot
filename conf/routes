@@ -4,7 +4,6 @@
 
 # Main Controller
 GET        /                                        controllers.Application.index
-GET        /showQuestion/:uuid                      controllers.Application.showQuestion(uuid: String)
 GET        /showSecretQuestion/:uuid/:secret        controllers.Application.showQuestion(uuid: String, secret:String)
 GET        /storeAnswer                             controllers.Application.storeAnswer
 # Login
