@@ -1,25 +1,19 @@
+@import play.Configuration
+@import org.apache.commons.codec.binary.Base64
 
-@(turkerId: String, question: Question, assetIds: List[Long], pdfFileName: String)
+@(turkerId: String, question: String, questionId: Long)
 
 @main("PPLibBallot - Question") {
 
     <h3>Hi @turkerId</h3>
-    <!--<form action="/logout" method="post">
-        <input type="submit" class="btn btn-warning" value="Logout">
-    </form>-->
 
-
-    <div id="question">
-        @Html(question.html.replaceAll("\\Q<![CDATA[\\E", "").replaceAll("\\Q]]>\\E", ""))
-    </div>
+    @Html(question)
 
     <script language="javascript">
         $(function() {
-            $("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@question.id\">");
-            $("form").append("<input type=\"hidden\" name=\"pdfFileName\" value=\"@pdfFileName\">");
+            $("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@questionId\">");
             console.log("Hidden elements added");
         });
-
     </script>
 
 }
