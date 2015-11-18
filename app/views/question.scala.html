@@ -1,4 +1,4 @@
-@import play.Configuration
+
 @(turkerId: String, question: Question, assetIds: List[Long], pdfFileName: String)
 
 @main("PPLibBallot - Question") {
@@ -19,11 +19,6 @@
             $("form").append("<input type=\"hidden\" name=\"pdfFileName\" value=\"@pdfFileName\">");
             console.log("Hidden elements added");
         });
-
-        $(function() {
-            $("#assets").append("<a href=\"@(Configuration.root().getString("assetPrefix",""))/assetsBallot/@assetIds.head\" target=\"_blank\">here.</a>");
-            console.log("Asset with id: " + @assetIds.head + " added");
-        })
 
     </script>
 
