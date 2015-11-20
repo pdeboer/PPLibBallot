@@ -22,10 +22,11 @@ object Application extends Controller {
 
 	def showAsset(id: Long, secret: String) = Action { request =>
 		val parentQuestions = QuestionDAO.findByAssetId(id).filter(_.secret == secret)
-
 		val turkerId: Option[String] = request.session.get("TurkerID")
 
-		if (turkerId.isDefined || parentQuestions.exists(_.id.get == TEMPLATE_ID)) {
+		def isAssetOfTemplate: Boolean = parentQuestions.exists(_.id.get == TEMPLATE_ID)
+
+		if (turkerId.isDefined || isAssetOfTemplate) {
 			val asset = AssetDAO.findById(id)
 			val hasUnansweredQuestions: Boolean = !parentQuestions.forall(q => AnswerDAO.existsAcceptedAnswerForQuestionId(q.id.get))
 
