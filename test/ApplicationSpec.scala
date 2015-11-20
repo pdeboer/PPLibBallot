@@ -16,7 +16,7 @@ class ApplicationSpec extends Specification {
   "Application" should {
 	  "format questions properly" in new WithApplication {
 		  val f = new QuestionHTMLFormatter("test asset://2/3  dddd", "myprefix").format
-		  f mustEqual "test myprefix/assetsBallot2/3  dddd"
+		  f mustEqual "test myprefix/assetsBallot/2/3  dddd"
 	  }
 
     "send 404 on a bad request" in new WithApplication{
