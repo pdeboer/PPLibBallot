@@ -83,7 +83,7 @@ object Application extends Controller {
 
 			if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get, secret)) {
 				val question = QuestionDAO.findById(questionId).get
-				Ok(views.html.question(user, question.html, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
+				Ok(views.html.question(user, formatQuestionHTML(question), questionId, secret)).withSession(replaceSession.getOrElse(request.session))
 			} else if (userFound.isDefined) {
 				Unauthorized("This question has already been answered").withSession(replaceSession.getOrElse(request.session))
 			} else {
@@ -92,6 +92,10 @@ object Application extends Controller {
 		}.getOrElse {
 			Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
 		}
+	}
+
+	def formatQuestionHTML(question: Question): String = {
+		question.html.replaceAll("asset://", Configuration.root().getString("assetPrefix") + "/assetsBallot")
 	}
 
 	def insertSnippetInHTMLPage(html: String, snippet: String): String = {
