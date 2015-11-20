@@ -2,6 +2,7 @@ package controllers
 
 import java.security.SecureRandom
 
+import helper.QuestionHTMLFormatter
 import models._
 import org.joda.time.DateTime
 import play.Configuration
@@ -83,7 +84,7 @@ object Application extends Controller {
 
 			if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get, secret)) {
 				val question = QuestionDAO.findById(questionId).get
-				Ok(views.html.question(user, formatQuestionHTML(question), questionId, secret)).withSession(replaceSession.getOrElse(request.session))
+				Ok(views.html.question(user, new QuestionHTMLFormatter(question.html).format, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
 			} else if (userFound.isDefined) {
 				Unauthorized("This question has already been answered").withSession(replaceSession.getOrElse(request.session))
 			} else {
@@ -94,9 +95,6 @@ object Application extends Controller {
 		}
 	}
 
-	def formatQuestionHTML(question: Question): String = {
-		question.html.replaceAll("asset:\\/\\/", Configuration.root().getString("assetPrefix") + "/assetsBallot")
-	}
 
 	def insertSnippetInHTMLPage(html: String, snippet: String): String = {
 		html.replace("<img id=\"snippet\" src=\"\" width=\"100%\"></img>", "<img id=\"snippet\" src=\"data:image/gif;base64," + snippet + "\" width=\"100%\"></img>")
