@@ -95,7 +95,7 @@ object Application extends Controller {
 	}
 
 	def formatQuestionHTML(question: Question): String = {
-		question.html.replaceAll("asset://", Configuration.root().getString("assetPrefix") + "/assetsBallot")
+		question.html.replaceAll("asset:\\/\\/", Configuration.root().getString("assetPrefix") + "/assetsBallot")
 	}
 
 	def insertSnippetInHTMLPage(html: String, snippet: String): String = {
