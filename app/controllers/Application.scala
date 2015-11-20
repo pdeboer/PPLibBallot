@@ -52,7 +52,7 @@ object Application extends Controller {
 		}
 
 		if (assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
-			Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(_.html).getOrElse("No Example page defined")))
+			Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(q => new QuestionHTMLFormatter(q.html).format).getOrElse("No Example page defined")))
 		} else {
 			val newSession = request.session + ("TurkerID" -> workerId) + ("assignmentId" -> assignmentId) + ("target" -> target)
 
@@ -84,7 +84,8 @@ object Application extends Controller {
 
 			if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get, secret)) {
 				val question = QuestionDAO.findById(questionId).get
-				Ok(views.html.question(user, new QuestionHTMLFormatter(question.html).format, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
+				val formattedHTML: String = new QuestionHTMLFormatter(question.html).format
+				Ok(views.html.question(user, formattedHTML, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
 			} else if (userFound.isDefined) {
 				Unauthorized("This question has already been answered").withSession(replaceSession.getOrElse(request.session))
 			} else {
