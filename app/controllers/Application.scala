@@ -1,11 +1,12 @@
 package controllers
 
+import java.security.SecureRandom
+
 import models._
 import org.joda.time.DateTime
 import play.Configuration
 import play.api.mvc._
 
-import scala.util.Random
 import scala.util.parsing.json.JSONObject
 
 object Application extends Controller {
@@ -39,6 +40,21 @@ object Application extends Controller {
 		}
 	}
 
+	def showMTQuestion(uuid: String, secret: String, assignmentId: String, hitId: String, turkSubmitTo: String, workerId: String, target: String) = Action { request =>
+
+		if (UserDAO.findByTurkerId(workerId).isEmpty) {
+			UserDAO.create(workerId, new DateTime())
+		}
+		val newSession = request.session + ("TurkerID" -> workerId) + ("assignmentId" -> assignmentId) + ("target" -> target)
+
+		if (assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
+			//TODO display example question that's not submittable. no login necessary
+			Ok(views.html.question(workerId, QuestionDAO.findById(1).map(_.html).getOrElse("No Example page defined"))).withSession(newSession)
+		} else {
+			showQuestionAction(uuid, secret, request, Some(workerId), Some(newSession))
+		}
+	}
+
 	/**
 	  * Show a question.
 	  * The method below counts the number of answers already sent by the turker and loads the question
@@ -51,24 +67,27 @@ object Application extends Controller {
 	  * @return
 	  */
 	def showQuestion(uuid: String, secret: String = "") = Action { request =>
+		showQuestionAction(uuid, secret, request, request.session.get("TurkerID"))
+	}
+
+	def showQuestionAction(uuid: String, secret: String, request: Request[AnyContent], turkerId: Option[String], replaceSession: Option[Session] = None) = {
 		val questionId = QuestionDAO.findIdByUUID(uuid)
 
-		request.session.get("TurkerID").map { user =>
+		turkerId.map { user =>
 			// get the answers of the turker in the batch group
 			val userFound = UserDAO.findByTurkerId(user)
 
 			if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get, secret)) {
 				val question = QuestionDAO.findById(questionId).get
-				Ok(views.html.question(user, question.html, questionId))
+				Ok(views.html.question(user, question.html, questionId)).withSession(replaceSession.getOrElse(request.session))
 			} else if (userFound.isDefined) {
-				Unauthorized("This question has already been answered")
+				Unauthorized("This question has already been answered").withSession(replaceSession.getOrElse(request.session))
 			} else {
 				Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
 			}
 		}.getOrElse {
 			Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
 		}
-
 	}
 
 	def insertSnippetInHTMLPage(html: String, snippet: String): String = {
@@ -109,18 +128,21 @@ object Application extends Controller {
 			try {
 
 				val questionId = request.getQueryString("questionId").mkString.toLong
+				val userId: Long = UserDAO.findByTurkerId(user).get.id.get
 
-				val outputCode = Math.abs(new Random(new DateTime().getMillis).nextLong())
-
-				if (isUserAllowedToAnswer(questionId, UserDAO.findByTurkerId(user).get.id.get)) {
+				if (isUserAllowedToAnswer(questionId, userId)) {
+					val outputCode = Math.abs(new SecureRandom().nextLong())
 
 					val answer: JSONObject = JSONObject.apply(request.queryString.map(m => {
 						(m._1, m._2.mkString(","))
 					}))
 
-					AnswerDAO.create(questionId, UserDAO.findByTurkerId(user).get.id.get, new DateTime, answer.toString(), outputCode)
+					AnswerDAO.create(questionId, userId, new DateTime, answer.toString(), outputCode)
 
-					Ok(views.html.code(user, outputCode)).withSession(request.session)
+					if (request.session.get("assignmentId").isDefined) {
+						Ok(views.html.postToTurk(request.session.get("target").get, request.session.get("assignmentId").get, outputCode)).withNewSession
+					} else
+						Ok(views.html.code(user, outputCode)).withSession(request.session)
 				} else {
 					Unauthorized("This question has already been answered.")
 				}
