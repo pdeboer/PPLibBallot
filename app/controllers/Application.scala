@@ -10,6 +10,7 @@ import play.api.mvc._
 import scala.util.parsing.json.JSONObject
 
 object Application extends Controller {
+	val TEMPLATE_ID = 1L
 
 	def index = Action { request =>
 		request.session.get("TurkerID").map { user =>
@@ -20,9 +21,12 @@ object Application extends Controller {
 	}
 
 	def showAsset(id: Long, secret: String) = Action { request =>
-		request.session.get("TurkerID").map { user =>
+		val parentQuestions = QuestionDAO.findByAssetId(id).filter(_.secret == secret)
+
+		val turkerId: Option[String] = request.session.get("TurkerID")
+
+		if (turkerId.isDefined || parentQuestions.exists(_.id.get == TEMPLATE_ID)) {
 			val asset = AssetDAO.findById(id)
-			val parentQuestions = QuestionDAO.findByAssetId(id).filter(_.secret == secret)
 			val hasUnansweredQuestions: Boolean = !parentQuestions.forall(q => AnswerDAO.existsAcceptedAnswerForQuestionId(q.id.get))
 
 			if (asset.isDefined && parentQuestions.nonEmpty && hasUnansweredQuestions) {
@@ -35,22 +39,21 @@ object Application extends Controller {
 			} else {
 				UnprocessableEntity("There exists no asset with id: " + id)
 			}
-		}.getOrElse {
+		} else {
 			Ok(views.html.login())
 		}
 	}
 
 	def showMTQuestion(uuid: String, secret: String, assignmentId: String, hitId: String, turkSubmitTo: String, workerId: String, target: String) = Action { request =>
-
-		if (UserDAO.findByTurkerId(workerId).isEmpty) {
+		if (workerId != "" && UserDAO.findByTurkerId(workerId).isEmpty) {
 			UserDAO.create(workerId, new DateTime())
 		}
-		val newSession = request.session + ("TurkerID" -> workerId) + ("assignmentId" -> assignmentId) + ("target" -> target)
 
 		if (assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
-			//TODO display example question that's not submittable. no login necessary
-			Ok(views.html.question(workerId, QuestionDAO.findById(1).map(_.html).getOrElse("No Example page defined"))).withSession(newSession)
+			Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(_.html).getOrElse("No Example page defined")))
 		} else {
+			val newSession = request.session + ("TurkerID" -> workerId) + ("assignmentId" -> assignmentId) + ("target" -> target)
+
 			showQuestionAction(uuid, secret, request, Some(workerId), Some(newSession))
 		}
 	}
