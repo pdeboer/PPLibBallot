@@ -1,4 +1,4 @@
-@(turkerId: String, question: String, questionId: Long = -1)
+@(turkerId: String, question: String, questionId: Long = -1, secret: String = "")
 
 @main("PPLibBallot - Question") {
 
@@ -10,6 +10,7 @@
 			$(function() {
 				@if(questionId>0){
 				$("form").append("<input type=\"hidden\" name=\"questionId\" value=\"@questionId\">");
+				$("form").append("<input type=\"hidden\" name=\"secret\" value=\"@secret\">");
 				console.log("Hidden elements added");
 				}
 			});

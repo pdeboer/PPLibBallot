@@ -83,7 +83,7 @@ object Application extends Controller {
 
 			if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get, secret)) {
 				val question = QuestionDAO.findById(questionId).get
-				Ok(views.html.question(user, question.html, questionId)).withSession(replaceSession.getOrElse(request.session))
+				Ok(views.html.question(user, question.html, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
 			} else if (userFound.isDefined) {
 				Unauthorized("This question has already been answered").withSession(replaceSession.getOrElse(request.session))
 			} else {
@@ -132,9 +132,10 @@ object Application extends Controller {
 			try {
 
 				val questionId = request.getQueryString("questionId").mkString.toLong
+				val secret = request.getQueryString("secret").mkString
 				val userId: Long = UserDAO.findByTurkerId(user).get.id.get
 
-				if (isUserAllowedToAnswer(questionId, userId)) {
+				if (isUserAllowedToAnswer(questionId, userId, secret)) {
 					val outputCode = Math.abs(new SecureRandom().nextLong())
 
 					val answer: JSONObject = JSONObject.apply(request.queryString.map(m => {
