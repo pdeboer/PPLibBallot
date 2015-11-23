@@ -28,11 +28,13 @@ object UserDAO {
 		}
 
 	def findByTurkerId(turkerId: String): Option[User] =
-		DB.withConnection { implicit c =>
-			SQL("SELECT * FROM user WHERE turker_id = {turkerId}").on(
-				'turkerId -> turkerId
-			).as(userParser.singleOpt)
-		}
+		if (turkerId == null) None
+		else
+			DB.withConnection { implicit c =>
+				SQL("SELECT * FROM user WHERE turker_id = {turkerId}").on(
+					'turkerId -> turkerId
+				).as(userParser.singleOpt)
+			}
 
 	def create(turkerId: String, firstSeenDateTime: DateTime): Option[Long] =
 		DB.withConnection { implicit c =>

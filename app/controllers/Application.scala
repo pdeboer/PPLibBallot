@@ -25,24 +25,28 @@ object Application extends Controller {
 		val parentQuestions = QuestionDAO.findByAssetId(id).filter(_.secret == secret)
 		val turkerId: Option[String] = request.session.get("TurkerID")
 
-		def isAssetOfTemplate: Boolean = parentQuestions.exists(_.id.get == TEMPLATE_ID)
+		val isAssetOfTemplate: Boolean = parentQuestions.exists(_.id.get == TEMPLATE_ID)
+		if (!isAssetOfTemplate && logAccessAndCheckIfExceedsAccessCount(request, turkerId.orNull)) {
+			Unauthorized("We received too many requests by your IP address")
+		} else {
 
-		if (turkerId.isDefined || isAssetOfTemplate) {
-			val asset = AssetDAO.findById(id)
-			val hasUnansweredQuestions: Boolean = !parentQuestions.forall(q => AnswerDAO.existsAcceptedAnswerForQuestionId(q.id.get))
+			if (turkerId.isDefined || isAssetOfTemplate) {
+				val asset = AssetDAO.findById(id)
+				val hasUnansweredQuestions: Boolean = !parentQuestions.forall(q => AnswerDAO.existsAcceptedAnswerForQuestionId(q.id.get))
 
-			if (asset.isDefined && parentQuestions.nonEmpty && hasUnansweredQuestions) {
-				val contentType = asset.get.contentType
-				if (contentType.equalsIgnoreCase("application/pdf")) {
-					Ok(asset.get.byteArray).as(contentType)
+				if (asset.isDefined && parentQuestions.nonEmpty && hasUnansweredQuestions) {
+					val contentType = asset.get.contentType
+					if (contentType.equalsIgnoreCase("application/pdf")) {
+						Ok(asset.get.byteArray).as(contentType)
+					} else {
+						Ok(asset.get.byteArray)
+					}
 				} else {
-					Ok(asset.get.byteArray)
+					UnprocessableEntity("There exists no asset with id: " + id)
 				}
 			} else {
-				UnprocessableEntity("There exists no asset with id: " + id)
+				Ok(views.html.login())
 			}
-		} else {
-			Ok(views.html.login())
 		}
 	}
 
@@ -76,24 +80,26 @@ object Application extends Controller {
 	}
 
 	def showQuestionAction(uuid: String, secret: String, request: Request[AnyContent], turkerId: Option[String], replaceSession: Option[Session] = None) = {
-		val questionId = QuestionDAO.findIdByUUID(uuid)
+		if (!logAccessAndCheckIfExceedsAccessCount(request, turkerId.orNull)) {
+			val questionId = QuestionDAO.findIdByUUID(uuid)
 
-		turkerId.map { user =>
-			// get the answers of the turker in the batch group
-			val userFound = UserDAO.findByTurkerId(user)
+			turkerId.map { user =>
+				// get the answers of the turker in the batch group
+				val userFound = UserDAO.findByTurkerId(user)
 
-			if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get, secret)) {
-				val question = QuestionDAO.findById(questionId).get
-				val formattedHTML: String = new QuestionHTMLFormatter(question.html).format
-				Ok(views.html.question(user, formattedHTML, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
-			} else if (userFound.isDefined) {
-				Unauthorized("This question has already been answered").withSession(replaceSession.getOrElse(request.session))
-			} else {
+				if (userFound.isDefined && isUserAllowedToAnswer(questionId, userFound.get.id.get, secret)) {
+					val question = QuestionDAO.findById(questionId).get
+					val formattedHTML: String = new QuestionHTMLFormatter(question.html).format
+					Ok(views.html.question(user, formattedHTML, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
+				} else if (userFound.isDefined) {
+					Unauthorized("This question has already been answered").withSession(replaceSession.getOrElse(request.session))
+				} else {
+					Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
+				}
+			}.getOrElse {
 				Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
 			}
-		}.getOrElse {
-			Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
-		}
+		} else Unauthorized("We have received too many requests from your IP address")
 	}
 
 
@@ -163,6 +169,17 @@ object Application extends Controller {
 		}.getOrElse {
 			Ok(views.html.login())
 		}
+	}
+
+	def logAccessAndCheckIfExceedsAccessCount(request: Request[AnyContent], username: String = ""): Boolean = {
+		val userIdCleaned = UserDAO.findByTurkerId(username).map(_.id.get).getOrElse(-1L)
+
+		Log.createEntry(request.uri, request.remoteAddress, userIdCleaned)
+
+		val requestsPerSnippetAnswer = 3
+		val maxSnippetsPerCrowdWorker: Int = 200
+
+		Log.ipLogEntriesSince(request.remoteAddress, DateTime.now().minusWeeks(4)) > requestsPerSnippetAnswer * maxSnippetsPerCrowdWorker
 	}
 
 }
