@@ -139,7 +139,7 @@ object Application extends Controller {
 		if (batch.get.allowedAnswersPerTurker == 0) {
 			true
 		} else {
-			if (batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAcceptedAnswersForBatch(userId, question.batchId)) {
+			if (batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAnswersForBatch(userId, question.batchId)) {
 				true
 			} else {
 				false

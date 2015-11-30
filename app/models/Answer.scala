@@ -57,9 +57,9 @@ object AnswerDAO {
 			).executeInsert()
 		}
 
-	def countUserAcceptedAnswersForBatch(userId: Long, batchId: Long): Int = {
+	def countUserAnswersForBatch(userId: Long, batchId: Long): Int = {
 		DB.withConnection { implicit c =>
-			SQL("SELECT * FROM answer a INNER JOIN question q ON a.question_id = q.id WHERE a.user_id = {userId} AND a.accepted = true AND q.batch_id = {batchId} ").on(
+			SQL("SELECT * FROM answer a INNER JOIN question q ON a.question_id = q.id WHERE a.user_id = {userId}  AND q.batch_id = {batchId} ").on(
 				'userId -> userId,
 				'batchId -> batchId
 			).as(answerParser *).size
