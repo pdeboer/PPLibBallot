@@ -50,16 +50,18 @@ object Application extends Controller {
 		}
 	}
 
+	def sessionUser(request: Request[AnyContent]) = request.session.get("TurkerID").filterNot(_.isEmpty)
+
 	def showMTQuestion(uuid: String, secret: String, assignmentId: String, hitId: String, turkSubmitTo: String, workerId: String, target: String) = Action { request =>
-		if (workerId != "" && UserDAO.findByTurkerId(workerId).isEmpty) {
+		if (!workerId.isEmpty && UserDAO.findByTurkerId(workerId).isEmpty) {
 			UserDAO.create(workerId, new DateTime())
 		}
 
 		if (assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
-			println(request.session.get("TurkerID"))
+			println(sessionUser(request))
 			def showAlreadyUsedMessage: Boolean = {
-				if (request.session.get("TurkerID").isDefined) {
-					val userFound = UserDAO.findByTurkerId(workerId)
+				if (sessionUser(request).isDefined) {
+					val userFound = UserDAO.findByTurkerId(sessionUser(request).get)
 					if (userFound.isDefined) {
 						val question = QuestionDAO.findById(QuestionDAO.findIdByUUID(uuid))
 						if (question.isDefined) !checkUserDidntExceedMaxAnswersPerBatch(userFound.get.id.get, question.get) else false
