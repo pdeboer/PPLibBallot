@@ -60,8 +60,10 @@ object Application extends Controller {
 			def showAlreadyUsedMessage: Boolean = {
 				if (request.session.get("TurkerID").isDefined) {
 					val userFound = UserDAO.findByTurkerId(workerId)
-					if (userFound.isDefined) !isUserAllowedToAnswer(QuestionDAO.findIdByUUID(uuid), userFound.get.id.get, secret)
-					else false
+					if (userFound.isDefined) {
+						val question = QuestionDAO.findById(QuestionDAO.findIdByUUID(uuid))
+						if (question.isDefined) !checkUserDidntExceedMaxAnswersPerBatch(userFound.get.id.get, question.get) else false
+					} else false
 				} else false
 			}
 
@@ -125,18 +127,22 @@ object Application extends Controller {
 		val question = QuestionDAO.findById(questionId)
 		// The question exists and there is no answer yet accepted in the DB
 		if (question.isDefined && !AnswerDAO.existsAcceptedAnswerForQuestionId(questionId) && question.get.secret == providedSecret) {
-			val batch = BatchDAO.findById(question.get.batchId)
-			if (batch.get.allowedAnswersPerTurker == 0) {
-				true
-			} else {
-				if (batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAcceptedAnswersForBatch(userId, question.get.batchId)) {
-					true
-				} else {
-					false
-				}
-			}
+			checkUserDidntExceedMaxAnswersPerBatch(userId, question.get)
 		} else {
 			false
+		}
+	}
+
+	def checkUserDidntExceedMaxAnswersPerBatch(userId: Long, question: Question): Boolean = {
+		val batch = BatchDAO.findById(question.get.batchId)
+		if (batch.get.allowedAnswersPerTurker == 0) {
+			true
+		} else {
+			if (batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAcceptedAnswersForBatch(userId, question.get.batchId)) {
+				true
+			} else {
+				false
+			}
 		}
 	}
 
