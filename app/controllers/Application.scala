@@ -60,7 +60,7 @@ object Application extends Controller {
 			def showAlreadyUsedMessage: Boolean = {
 				if (request.session.get("TurkerID").isDefined) {
 					val userFound = UserDAO.findByTurkerId(workerId)
-					if (userFound.isDefined) isUserAllowedToAnswer(QuestionDAO.findIdByUUID(uuid), userFound.get.id.get, secret)
+					if (userFound.isDefined) !isUserAllowedToAnswer(QuestionDAO.findIdByUUID(uuid), userFound.get.id.get, secret)
 					else false
 				} else false
 			}
