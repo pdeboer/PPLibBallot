@@ -65,7 +65,8 @@ object Application extends Controller {
 					} catch {
 						case _: Throwable => -1
 					}
-					isUserAllowedToAnswer(uuidLong, userFound.get.id.get, secret)
+					if (userFound.isDefined) isUserAllowedToAnswer(uuidLong, userFound.get.id.get, secret)
+					else false
 				} else false
 			}
 
