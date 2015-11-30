@@ -55,8 +55,6 @@ object Application extends Controller {
 			UserDAO.create(workerId, new DateTime())
 		}
 
-		println(s"assignmnet: $assignmentId eq? " + (assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE"))
-
 		if (assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
 			Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(q => new QuestionHTMLFormatter(q.html).format).getOrElse("No Example page defined")))
 		} else {
