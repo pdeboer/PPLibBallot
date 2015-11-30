@@ -58,7 +58,6 @@ object Application extends Controller {
 		}
 
 		if (assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
-			println(sessionUser(request))
 			def showAlreadyUsedMessage: Boolean = {
 				if (sessionUser(request).isDefined) {
 					val userFound = UserDAO.findByTurkerId(sessionUser(request).get)
