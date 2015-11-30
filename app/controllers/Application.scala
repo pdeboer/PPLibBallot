@@ -56,7 +56,21 @@ object Application extends Controller {
 		}
 
 		if (assignmentId == "ASSIGNMENT_ID_NOT_AVAILABLE") {
-			Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(q => new QuestionHTMLFormatter(q.html).format).getOrElse("No Example page defined")))
+
+			def showAlreadyUsedMessage: Boolean = {
+				if (request.session.get("TurkerID").isDefined) {
+					val userFound = UserDAO.findByTurkerId(workerId)
+					val uuidLong = try {
+						uuid.toLong
+					} catch {
+						case _: Throwable => -1
+					}
+					isUserAllowedToAnswer(uuidLong, userFound.get.id.get, secret)
+				} else false
+			}
+
+			if (showAlreadyUsedMessage) Unauthorized("You have already answered a HIT for this particular batch. Please try another") else Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(q => new QuestionHTMLFormatter(q.html).format).getOrElse("No Example page defined")))
+
 		} else {
 			val newSession = request.session + ("TurkerID" -> workerId) + ("assignmentId" -> assignmentId) + ("target" -> target)
 
