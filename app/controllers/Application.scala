@@ -134,11 +134,11 @@ object Application extends Controller {
 	}
 
 	def checkUserDidntExceedMaxAnswersPerBatch(userId: Long, question: Question): Boolean = {
-		val batch = BatchDAO.findById(question.get.batchId)
+		val batch = BatchDAO.findById(question.batchId)
 		if (batch.get.allowedAnswersPerTurker == 0) {
 			true
 		} else {
-			if (batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAcceptedAnswersForBatch(userId, question.get.batchId)) {
+			if (batch.get.allowedAnswersPerTurker > AnswerDAO.countUserAcceptedAnswersForBatch(userId, question.batchId)) {
 				true
 			} else {
 				false
