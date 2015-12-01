@@ -105,7 +105,7 @@ object Application extends Controller {
 					val formattedHTML: String = new QuestionHTMLFormatter(question.html).format
 					Ok(views.html.question(user, formattedHTML, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
 				} else if (userFound.isDefined) {
-					Unauthorized("This question has already been answered").withSession(replaceSession.getOrElse(request.session))
+					Unauthorized(views.html.tooManyAnswersInBatch).withSession(replaceSession.getOrElse(request.session))
 				} else {
 					Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
 				}
