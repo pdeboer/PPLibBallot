@@ -108,7 +108,7 @@ object Application extends Controller {
 					if (checkUserDidntExceedMaxAnswersPerBatch(userFound.get.id.get, QuestionDAO.findById(questionId).get))
 						Unauthorized("This HIT has already been answered")
 					else
-						Unauthorized(views.html.tooManyAnswersInBatch).withSession(replaceSession.getOrElse(request.session))
+						Ok(views.html.tooManyAnswersInBatch).withSession(replaceSession.getOrElse(request.session))
 				} else {
 					Ok(views.html.login()).withSession("redirect" -> (Configuration.root().getString("assetPrefix") + "/showQuestion?q=" + uuid + "&s=" + secret))
 				}
