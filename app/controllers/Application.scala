@@ -68,7 +68,7 @@ object Application extends Controller {
 				} else false
 			}
 
-			if (showAlreadyUsedMessage) Unauthorized("You have already answered a HIT for this particular batch. Please try another") else Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(q => new QuestionHTMLFormatter(q.html).format).getOrElse("No Example page defined")))
+			if (showAlreadyUsedMessage) Unauthorized(views.html.tooManyAnswersInBatch(true)) else Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(q => new QuestionHTMLFormatter(q.html).format).getOrElse("No Example page defined")))
 
 		} else {
 			val newSession = request.session + ("TurkerID" -> workerId) + ("assignmentId" -> assignmentId) + ("target" -> target)
@@ -106,7 +106,7 @@ object Application extends Controller {
 					Ok(views.html.question(user, formattedHTML, questionId, secret)).withSession(replaceSession.getOrElse(request.session))
 				} else if (userFound.isDefined) {
 					if (checkUserDidntExceedMaxAnswersPerBatch(userFound.get.id.get, QuestionDAO.findById(questionId).get))
-						Unauthorized("This HIT has already been answered")
+						Unauthorized("This HIT has already been answered / you don't have permission to answer this HIT. If this error persists, please write pdeboer@mit.edu ")
 					else
 						Unauthorized(views.html.tooManyAnswersInBatch()).withSession(replaceSession.getOrElse(request.session))
 				} else {
