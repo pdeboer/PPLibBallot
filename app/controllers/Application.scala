@@ -12,9 +12,10 @@ import scala.util.parsing.json.JSONObject
 
 object Application extends Controller {
 	val TEMPLATE_ID = 1L
+	val TURKER_ID_KEY: String = "TurkerId"
 
 	def index = Action { request =>
-		request.session.get("TurkerID").map { user =>
+		request.session.get(TURKER_ID_KEY).map { user =>
 			Ok(views.html.index(user))
 		}.getOrElse {
 			Ok(views.html.login())
@@ -23,7 +24,7 @@ object Application extends Controller {
 
 	def showAsset(id: Long, secret: String) = Action { request =>
 		val parentQuestions = QuestionDAO.findByAssetId(id).filter(_.secret == secret)
-		val turkerId: Option[String] = request.session.get("TurkerID")
+		val turkerId: Option[String] = request.session.get(TURKER_ID_KEY)
 
 		val isAssetOfTemplate: Boolean = parentQuestions.exists(_.id.get == TEMPLATE_ID)
 		if (!isAssetOfTemplate && logAccessAndCheckIfExceedsAccessCount(request, turkerId.orNull)) {
@@ -50,10 +51,10 @@ object Application extends Controller {
 		}
 	}
 
-	def sessionUser(request: Request[AnyContent]) = request.session.get("TurkerID").filterNot(_.isEmpty)
+	def sessionUser(request: Request[AnyContent]) = request.session.get(TURKER_ID_KEY).filterNot(_.isEmpty)
 
 	def showMTQuestion(uuid: String, secret: String, assignmentId: String, hitId: String, turkSubmitTo: String, workerId: String, target: String) = Action { request =>
-		if (!workerId.isEmpty && UserDAO.findByTurkerId(workerId).isEmpty) {
+		if (workerId.length > 5 && UserDAO.findByTurkerId(workerId).isEmpty) {
 			UserDAO.create(workerId, new DateTime())
 		}
 
@@ -71,6 +72,7 @@ object Application extends Controller {
 			if (showAlreadyUsedMessage) Unauthorized(views.html.tooManyAnswersInBatch(true)) else Ok(views.html.question(workerId, QuestionDAO.findById(TEMPLATE_ID).map(q => new QuestionHTMLFormatter(q.html).format).getOrElse("No Example page defined")))
 
 		} else {
+			assert(!workerId.isEmpty)
 			val newSession = request.session + ("TurkerID" -> workerId) + ("assignmentId" -> assignmentId) + ("target" -> target)
 
 			showQuestionAction(uuid, secret, request, Some(workerId), Some(newSession))
@@ -89,10 +91,19 @@ object Application extends Controller {
 	  * @return
 	  */
 	def showQuestion(uuid: String, secret: String = "") = Action { request =>
-		showQuestionAction(uuid, secret, request, request.session.get("TurkerID"))
+		showQuestionAction(uuid, secret, request, request.session.get(TURKER_ID_KEY))
 	}
 
-	def showQuestionAction(uuid: String, secret: String, request: Request[AnyContent], turkerId: Option[String], replaceSession: Option[Session] = None) = {
+	def showQuestionAction(uuid: String, secret: String, request: Request[AnyContent], turkerId: Option[String], _replaceSession: Option[Session] = None) = {
+		//dont allow session to be reset turker ID field
+		val replaceSession = _replaceSession.map(s => {
+			val t = s.get(TURKER_ID_KEY)
+			if (t.isDefined && t.get.length < 5) {
+				println("nasty removal")
+				s - TURKER_ID_KEY
+			} else s
+		})
+
 		if (!logAccessAndCheckIfExceedsAccessCount(request, turkerId.orNull)) {
 			val questionId = QuestionDAO.findIdByUUID(uuid)
 
@@ -157,7 +168,7 @@ object Application extends Controller {
 	  * @return
 	  */
 	def storeAnswer = Action { request =>
-		request.session.get("TurkerID").map { user =>
+		request.session.get(TURKER_ID_KEY).map { user =>
 			try {
 
 				val questionId = request.getQueryString("questionId").mkString.toLong
@@ -174,7 +185,8 @@ object Application extends Controller {
 					AnswerDAO.create(questionId, userId, new DateTime, answer.toString(), outputCode)
 
 					if (request.session.get("assignmentId").isDefined) {
-						Ok(views.html.postToTurk(request.session.get("target").get, request.session.get("assignmentId").get, outputCode)).withNewSession
+						val newSessionInclUser: Session = Session() + (TURKER_ID_KEY -> request.session.get(TURKER_ID_KEY).get)
+						Ok(views.html.postToTurk(request.session.get("target").get, request.session.get("assignmentId").get, outputCode)).withSession(newSessionInclUser)
 					} else
 						Ok(views.html.code(user, outputCode)).withSession(request.session)
 				} else {

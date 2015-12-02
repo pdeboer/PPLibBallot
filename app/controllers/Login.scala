@@ -19,9 +19,9 @@ object Login extends Controller {
 
 		// Redirect if necessary otherwise just go to index
 		request.session.get("redirect").map { redirect =>
-			Redirect(redirect).withSession(request.session - "redirect" + ("TurkerID" -> turkerId))
+			Redirect(redirect).withSession(request.session - "redirect" + (Application.TURKER_ID_KEY -> turkerId))
 		}.getOrElse {
-			Ok(views.html.index(turkerId)).withSession(request.session + ("TurkerID" -> turkerId))
+			Ok(views.html.index(turkerId)).withSession(request.session + (Application.TURKER_ID_KEY -> turkerId))
 		}
 	}
 
